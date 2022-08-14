@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+
+  db:
+    build: ./requirements/mariadb
+    container_name: "mariadb"
+    volumes:
+      - "db_data:/var/lib/mysql"
+    networks:
+      - infra
+    env_file:
+      - ".env"
+    expose:
+      - "3306"
+    restart: on-failure
+
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: "wordpress"
+    depends_on:
+      - db
+    volumes:
+      - "wordpress_data:/var/www/html/wordpress"
+    env_file:
+      - ".env"
+    networks:
+      - infra
+    expose:
+      - "9000"
+    restart: on-failure
+
+  nginx:
+    build: ./requirements/nginx
+    container_name: "nginx"
+    ports:
+      - "443:443"
+    depends_on:
+      - wordpress
+    volumes:
+      - "wordpress_data:/var/www/html/wordpress"
+    networks:
+      - infra
+    expose:
+      - "443"
+    restart: on-failure
+
+networks:
+  infra:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      device: '/home/heom/data/mysql'
+      o: bind
+
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      device: '/home/heom/data/wordpress'
+      o: bind
